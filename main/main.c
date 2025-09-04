@@ -1,5 +1,14 @@
 
+/*
+ * Remote relay:
+ * Project for load remote control using 
+ * WT32-ETH0 and MQTT
+ * Autors: Rafael M. Silva (rsilva@lna.br)
+ *         
+ */
 
+// ------------------------------------------------
+// Includes 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -18,12 +27,22 @@
 #include "user_i2c.h"
 #include "tca9555.h"
 
+// ------------------------------------------------
+// Defines
+
+// ------------------------------------------------
+// Global variables
 static const char* TAG = "MAIN";
 TaskHandle_t relayTaskHandle = NULL;
+extern QueueHandle_t v_relay_value_queue;
+
+// ------------------------------------------------
+// Local functions
 void vRelayHandler(void* pvParameters);
-extern QueueHandle_t mqttPayload;
 
 
+// ------------------------------------------------
+// Main function
 void app_main(void)
 {
     esp_err_t err = nvs_flash_init();
@@ -82,7 +101,8 @@ void app_main(void)
 }
 
 
-
+// ------------------------------------------------
+// Task for handle MQTT topic "relay/value"
 void vRelayHandler(void* pvParameters)
 {
     // Get the I2C device hadler to work with 
@@ -91,7 +111,7 @@ void vRelayHandler(void* pvParameters)
     {
         int32_t rawData = 0;
         uint16_t relayData = 0;
-        xQueueReceive(mqttPayload,&rawData,portMAX_DELAY);
+        xQueueReceive(v_relay_value_queue,&rawData,portMAX_DELAY);
 
         relayData = (uint16_t)rawData;
         printf("Relay values: %d\n",relayData);
@@ -99,3 +119,7 @@ void vRelayHandler(void* pvParameters)
         tca_set_outputs(tca,relayData);
     }
 }
+
+// ------------------------------------------------
+// EOF
+// ------------------------------------------------

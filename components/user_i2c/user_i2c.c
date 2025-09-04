@@ -1,12 +1,16 @@
-
+/*
+ * User defined I2C library
+ * Autors: Rafael M. Silva (rsilva@lna.br)
+ *         
+ */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "driver/gpio.h"
+#include "driver/i2c_master.h"
 #include "user_i2c.h"
-
-// ==================================================================================
-// Configuration functions
-// ==================================================================================
-
 
 // ----------------------------------------------------------------------------------
 // I2C bus initialization
@@ -47,9 +51,6 @@ esp_err_t i2c_attach_device(uint16_t device_address, i2c_master_bus_handle_t i2c
     return err;
 }
 
-// ==================================================================================
-// Data exchange functions
-// ==================================================================================
 
 // ----------------------------------------------------------------------------------
 // I2C send a byte
@@ -87,3 +88,6 @@ esp_err_t i2c_receive(i2c_master_dev_handle_t device, uint8_t address, uint8_t* 
     return err;
 
 }
+// ------------------------------------------------
+// EOF
+// ------------------------------------------------

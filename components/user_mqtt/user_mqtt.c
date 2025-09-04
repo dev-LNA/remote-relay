@@ -1,17 +1,37 @@
+/*
+ * User defined MQTT library
+ * Autors: Rafael M. Silva (rsilva@lna.br)
+ *         
+ */
 
+// ------------------------------------------------------
+// includes
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
+#include "esp_log.h"
+#include "mqtt_client.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "freertos/queue.h"
 #include "user_mqtt.h"
 
+// ------------------------------------------------------
+// Defines
 #define MQTT_CONNECTED_BIT     BIT0
 #define MQTT_DISCONNECTED_BIT  BIT1
 #define MQTT_ERROR_BIT         BIT2
 
+// ------------------------------------------------------
+// Global variables
 static const char* TAG = "MQTT";
 static EventGroupHandle_t s_mqtt_event_group = NULL;
 static esp_mqtt_client_handle_t client = NULL;
 
-QueueHandle_t mqttPayload;
+QueueHandle_t v_relay_value_queue; // Queue for MQTT topic relay/value payload
 
 // ------------------------------------------------------
 // Log errors from TCP layer 
@@ -112,11 +132,6 @@ static void mqtt_event_handler(void* event_handler_arg,
         memset(payload,0,event->data_len+1);
         memcpy(payload,event->data,event->data_len);
 
-        // Memmory allocation for JSON string 
-        char* json_str = NULL;
-        json_str = malloc(JSON_BUFFER_SIZE);
-        memset(json_str,0,JSON_BUFFER_SIZE);
-
         printf("Topic: %s\n",topic);
         printf("Payload: %s\n", payload);
 
@@ -124,15 +139,13 @@ static void mqtt_event_handler(void* event_handler_arg,
         if(strcmp(RELAY_TOPIC_VALUE,topic) == 0)
         {
             int32_t data_to_send = (int32_t)strtol(payload,NULL,16);
-            xQueueSend(mqttPayload,&data_to_send,portMAX_DELAY);
+            xQueueSend(v_relay_value_queue,&data_to_send,portMAX_DELAY);
         }
             
         free(topic);
 		free(payload);
-        free(json_str);
         topic = NULL;
         payload = NULL;
-        json_str = NULL;
         break;
     case MQTT_EVENT_BEFORE_CONNECT: // The event occurs before connecting
         ESP_LOGI(TAG, "MQTT_EVENT_BEFORE_CONNECT");
@@ -195,7 +208,7 @@ esp_err_t user_mqtt_start(void)
         ESP_LOGI(TAG,"Connected to Broker: %s",ESP_BROKER_URL);
 
         // Create a queue for transfer data between tasks
-        mqttPayload = xQueueCreate(1,sizeof(int32_t));
+        v_relay_value_queue = xQueueCreate(1,sizeof(int32_t));
 
         err = ESP_OK;
     }
@@ -261,3 +274,8 @@ void user_mqtt_stop(void)
     ESP_LOGI(TAG,"MQTT stopped");
     return;
 }
+
+
+// ------------------------------------------------
+// EOF
+// ------------------------------------------------

@@ -1,9 +1,47 @@
+/*
+ * User defined Ethernet library for WT32-ETH0
+ * Autors: Rafael M. Silva (rsilva@lna.br)
+ *         
+ */
+
+// ------------------------------------------------------
+// Includes
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
+#include "driver/gpio.h"
+
+#include "esp_log.h"
+#include "esp_err.h"
+
+#include "esp_eth.h"
+#include "esp_system.h"
+
+#include "esp_eth_driver.h"
+#include "esp_check.h"
+#include "esp_mac.h"
+#include "esp_event.h"
+#include "esp_mac.h"
+#include "esp_netif.h"
+#include "lwip/ip4_addr.h"
+#include "lwip/err.h"
+#include "lwip/sys.h"
 
 #include "user_ethernet.h"
 
+// ------------------------------------------------------
+// Defines
 #define ETHERNET_CONNECTED_BIT  BIT0
 #define ETHERNET_FAIL_BIT       BIT1
 
+// ------------------------------------------------------
+// Global variables
 static EventGroupHandle_t s_eth_event_group;
 static const char* TAG = "ETH";
 
@@ -42,7 +80,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
 }
 
 // ------------------------------------------------------
-// Event handler for IP_EVENT_ETH_GOT_IP */
+// Event handler for IP_EVENT_ETH_GOT_IP
 static void got_ip_event_handler(void *arg, esp_event_base_t event_base, 
             int32_t event_id, void *event_data)
 {
@@ -59,7 +97,7 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
 }
 
 // ------------------------------------------------------
-// Settup the ESP342 internal EMAC layer
+// Settup the ESP32 internal EMAC layer
 static esp_eth_handle_t eth_init_internal(esp_eth_mac_t **mac_out, esp_eth_phy_t **phy_out)
 {
     esp_eth_handle_t ret = NULL;
@@ -124,7 +162,7 @@ static esp_eth_handle_t eth_init_internal(esp_eth_mac_t **mac_out, esp_eth_phy_t
 
 
 // ------------------------------------------------------
-// user ethermet driver initialization
+// user ethernet driver initialization
 esp_err_t ethernet_setup(void)
 {
     // esp_err_t err = ESP_OK;
@@ -195,3 +233,6 @@ esp_err_t ethernet_setup(void)
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     return ESP_FAIL;
 }
+// ------------------------------------------------
+// EOF
+// ------------------------------------------------
