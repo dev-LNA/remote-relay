@@ -19,7 +19,8 @@
         "chrono": "c",
         "compare": "c",
         "i2c_master.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "user_i2c.h": "c"
     },
     "idf.portWin": "COM7",
     "idf.flashType": "UART"

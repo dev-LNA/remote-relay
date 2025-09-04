@@ -1,6 +1,16 @@
 
+#include <stdint.h>
+#include <stdbool.h>
 
+#include "driver/gpio.h"
+#include "driver/i2c_master.h"
+#include "esp_err.h"
+
+#include "user_i2c.h"
 #include "tca9555.h"
+
+
+
 
 //
 void tca_config_mode(i2c_master_dev_handle_t device, uint16_t bits)

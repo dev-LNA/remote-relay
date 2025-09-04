@@ -1,10 +1,6 @@
 #ifndef TCA9555_H
 #define TCA9555_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "user_i2c.h"
-
 #define TCA9555_ADDR 0x20
 
 // ----------------------------------------------------------------------------------
