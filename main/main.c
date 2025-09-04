@@ -85,7 +85,9 @@ void app_main(void)
     if(user_mqtt_start() == ESP_OK)
     {
         // Write on relay/topic status and change relay to "online"
-        user_mqtt_publish(RELAY_TOPIC_STATUS,"Online",1,false);
+        user_mqtt_publish(RELAY_TOPIC_STATUS,"Online",1,true);
+
+        // Subscribe on topi "relay/value" to control digital outputs values
         user_mqtt_subscribe(RELAY_TOPIC_VALUE,1);   
 
         // Create an task to handle MQTT relay data
@@ -116,10 +118,12 @@ void vRelayHandler(void* pvParameters)
         uint16_t relayData = 0;
         xQueueReceive(v_relay_value_queue,&rawData,portMAX_DELAY);
 
-        relayData = (uint16_t)rawData;
+        relayData = (uint16_t)(0x0000FFFF&rawData);
         printf("Relay values: %d\n",relayData);
 
-        tca_set_outputs(tca,relayData);
+        // Change TCA Status
+        tca_set_outputs(tca,relayData);   //  Set gpio outputs
+        tca_clear_outputs(tca,~relayData); // Clear complementar gpio outputs
     }
 }
 
