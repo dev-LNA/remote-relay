@@ -1,89 +1,111 @@
+# 🔌 Remote Relay Project
 
+This project involves the development of a **remote actuation system** for electrical loads and equipment, based on the **WT32-ETH01** module. The module integrates an **ESP32-S** microcontroller with a **LAN8720 Ethernet PHY**, enabling wired network connectivity via the IEEE 802.3 standard.
 
-# Remote relay project
+The system communicates with a **TCA9555 digital I/O expander** over an **I²C** bus, providing scalable control of multiple digital outputs. Communication with a remote **MQTT broker** is performed via Ethernet, leveraging the lightweight publish/subscribe messaging protocol to ensure efficient and reliable data exchange in IoT applications.
 
-This project consists of the development of a remote actuation system for electrical loads and equipment, based on the WT32-ETH01 module. This module integrates an ESP32-S microcontroller with a LAN8720 Ethernet PHY, enabling wired network connectivity via the IEEE 802.3 standard.
+📍 **Deployment Location**: Pico dos Dias Observatory, Itajubá, Minas Gerais, Brazil  
+🔧 **Application**: Infrastructure automation and remote equipment control  
+📡 **Technologies**: ESP32, LAN8720, MQTT, I2C, Ethernet, RMII
 
-The system interfaces with a TCA9555 digital I/O expander over an I²C bus, allowing scalable control of multiple digital outputs. Communication with a remote MQTT broker is handled over Ethernet, leveraging the lightweight publish/subscribe messaging protocol to ensure efficient and reliable data exchange in IoT applications.
+---
 
-Designed for deployment at the Pico dos Dias Observatory in Itajubá, Minas Gerais, Brazil, the system is intended to support remote automation tasks and infrastructure control in a scientific and industrial environment. The architecture is modular and scalable, making it suitable for various IoT and industrial automation scenarios requiring deterministic network performance and secure communication.
+## 🌐 Ethernet PHY Overview
 
+The image below illustrates a comparison between the **ISO/OSI Ethernet model** and internet protocols such as HTTP:
 
-## Ethernet Phy
+<img alt="OSI model vs Internet Protocols" src="./img/internet_model.png" width="500"/>
 
-The image below demonstrates a comparissoin bewtweem the ISO/OSI Ethernet model and internet protocols, like HTTP:
+The **MAC (Media Access Controller)** is integrated into the ESP32 and manages the **Data Link Layer**. The **PHY (Physical Layer Transceiver)** handles the electrical signaling and physical connection to the network, interfacing with the MAC via standard protocols.
 
-<img alt="WT32-ETH01 circuit board" src="./img/internet_model.png" width=500>
+The ESP32 communicates with the LAN8720 using one of the following interfaces:
 
-The MAC (Media Access Controller) is usually integrated into a processor and controls the data-link-layer portion of the OSI model, and the data link layer defines the way in which communication takes place over the medium and the frame structure for the transmitted and received messages. 
+- **MII** (Media Independent Interface)
+- **RMII** (Reduced Media Independent Interface) ← _used by this project_
 
-The Ethernet Physical Layer (PHY) is the physical interface transceiver that implements the physical layer portion of the OSI model, its responsible for the physical link between the Ethernet controller and the network. The physical layer defines the electrical and optical signals, line status, clock reference, data encoding and circuits required for data transmission and reception, and communicates to the data link Layer devices provide standard interfaces.
+---
 
-The ESP32 already contains an Internal Ethernet Media Access Controller (MAC) and it can send and receive data by using an external ethernet PHY (physical layer), here comes the role of the LAN8720 which provides everything from the PHY to the RJ45 Connector in a small easy to use package.
+### 📡 MII – Media Independent Interface
 
-The communication between MAC and PHY can have diverse choices:
-- MII (Media Independent Interface).
-- RMII (Reduced Media Independent Interface).
+MII includes two main components:
 
-### MII (Media Independent Interface)
-MII has two signal interfaces :
-- A Data Interface : for sending and receiving Ethernet frame data.
-- A PHY management interface (MDIO also known as SMI or MIIM): used to read and write the control and status registers of the PHY in order to configure each PHY before Operation, and to monitor link status during operation.
-From the hardware point of view, the MIIM consists of the following two signals :
-- MDC : Management Data clock that is driven by the MAC device to the PHY (25 MHz clock).
-- MDIO data : Management Data Input/output, the PHY drives it to provide register data.
+- **Data Interface** – For sending/receiving Ethernet frames  
+- **PHY Management Interface (MDIO / MIIM)** – For configuration and monitoring
 
-<img alt="WT32-ETH01 circuit board" src="./img/MII.png" width=500>
+#### Hardware Signals:
+- `MDC`: Management Data Clock (driven by MAC)
+- `MDIO`: Management Data I/O (bi-directional)
 
-### RMII (Reduced Media Independent Interface)
-RMII is the interface employed by WT32-ETH01 and LN8720, and it has the following features:
-- Support for an operating rate of 10 Mbit/s or 100 Mbit/s.
-- The reference clock frequency must be 50 MHz.
-- The same reference clock must be provided externally both to the MAC and the external Ethernet PHY.
-- It provides independent 2-bit-wide TX and RX data paths.
+<img alt="MII Interface Diagram" src="./img/MII.png" width="500"/>
 
-<img alt="WT32-ETH01 circuit board" src="./img/RMII.png" width=500>
+---
 
+### ⚡ RMII – Reduced Media Independent Interface
 
-## WT32-ETH01 Ethernet hardware description
+RMII is the interface used by the WT32-ETH01 and LAN8720. Features include:
 
-The WT32-ETH01 with LAN8720 contains an external 50 MHz and the **GPIO0** is the only choice to input the reference clock in the ESP32 to sincronize the MAC and PHY layers. But the **GPIO0** pin have an important role in selecting the Bootloader Mode as the ESP32 will enter the serial bootloader (programming mode) when **GPIO0** is held low on reset, otherwise it will run the program in flash.
+- ✅ Supports **10 Mbps** and **100 Mbps**
+- ✅ Requires **50 MHz reference clock**
+- ✅ Shared clock between MAC and PHY
+- ✅ Independent 2-bit TX and RX data paths
 
-Then, to solve this issue it is necessary to disable the reference clock in hardware by default and then re-enable it at the driver installation stage. This was done in WT32-ETH01 module using the Enable pin of the oscillator connected to **GPIO16** pin in the ESP32 to disable the oscillator at reset and then re-enable it when installing the driver.
+<img alt="RMII Interface Diagram" src="./img/RMII.png" width="500"/>
 
-- The interface to the Ethernet PHY uses **GPIO 23** for MDC and **GPIO 18** for MDIO.
+---
 
-- There's an external oscillator that drives **GPIO 0**, and that oscillator is enabled by setting **GPIO 16** high
+## 🧩 WT32-ETH01 Ethernet Hardware
 
-- The PHY reset pin is NOT wired to a GPIO (it gets reset at startup)
+The **WT32-ETH01** with **LAN8720** includes an external **50 MHz oscillator**. The **ESP32's GPIO0** is used to input the clock to synchronize MAC and PHY layers.
 
+However, **GPIO0** also controls **boot mode**:  
+If held low during reset → programming mode  
+If high or floating → normal boot mode
 
-## WT32-ETH01 Pinout
+> ⚠️ **Conflict Resolution**:  
+> To avoid conflicts, the oscillator is disabled at reset using **GPIO16**, and later re-enabled by software after boot.
 
-<img alt="WT32-ETH01 circuit board" src="./img/wt32_eth01_proj_pinout.jpg" width=800>
+### 🧠 GPIO Summary
 
+| Function         | GPIO Pin | Description                                  |
+|------------------|----------|----------------------------------------------|
+| MDC              | GPIO23   | Management Data Clock                        |
+| MDIO             | GPIO18   | Management Data I/O                          |
+| Clock Input      | GPIO0    | Receives 50 MHz from oscillator              |
+| Oscillator Enable| GPIO16   | Enables oscillator after boot                |
+| PHY Reset        | —        | Automatically reset at startup (not GPIO)    |
 
-### Warning
-There are limitations on several of the pins:
-- **IO0:** At boot, must be pulled low to program, must float or be pulled high to boot normally. After booting, used to receive the Ethernet 50Mhz clock (enabled by IO16). Best to avoid any other use.
+---
 
-- **IO1:** ESP32 serial output. Used when programming and active by default when running. Best to avoid any other use.
+## 🖥️ WT32-ETH01 Pinout
 
-- **IO2:** At boot, must float or be pulled low to program. You can use this pin (especially for output) but make sure nothing pulls it high while booting.
+<img alt="WT32-ETH01 Pinout Diagram" src="./img/wt32_eth01_proj_pinout.jpg" width="800"/>
 
-- **IO3:** ESP32 serial input. Used when programming and active by default when running. Best to avoid any other use.
+---
 
-- **IO5, IO15 (MTDO):** At boot, IO5 controls whether ESP32 libraries will print debug messages to the serial port (IO1). Also at boot, IO5 and IO15 together control timings of the module that lets the ESP32 act as an SD card. You are probably not using that module, so you can use these pins (especially for output) but note the effect on debug chatter if pulled while booting.
+## ⚠️ Important Pin Usage Notes
 
-- **IO12 (MTDI):** At boot, must float or be pulled low or the chip won't work (wrong voltage). You can use this pin (especially for output) after booting, but make sure nothing pulls it high while booting.
+> These GPIOs have restrictions during **ESP32 boot process**. Misuse can prevent boot or cause undefined behavior.
 
-- **IO35, IO36, IO39:** These pins are input only, but are otherwise free to use.
+- **GPIO0**: Must be LOW to program; used for 50 MHz clock after boot. Avoid reusing.
+- **GPIO1**: Serial TX (used for programming). Avoid reusing.
+- **GPIO2**: Must be LOW/floating during boot. Usable post-boot.
+- **GPIO3**: Serial RX (used for programming). Avoid reusing.
+- **GPIO5, GPIO15**: Affects serial debug and SD interface at boot. Use with caution.
+- **GPIO12**: Must be LOW/floating at boot to avoid voltage issues.
+- **GPIO35, GPIO36, GPIO39**: Input-only. Safe for sensing applications.
 
-WiFi is internal to the ESP32 and works normally.
+✅ **Wi-Fi** functionality remains available and unaffected.
 
-## References
- - https://github.com/Zelmoghazy/esp32-ethernet-lan8720/tree/main?tab=readme-ov-file
- - https://github.com/ldijkman/WT32-ETH01-LAN-8720-RJ45-
- - https://github.com/egnor/wt32-eth01
+---
 
+## 📚 References
 
+- 🔗 [esp32-ethernet-lan8720 by Zelmoghazy](https://github.com/Zelmoghazy/esp32-ethernet-lan8720)
+- 🔗 [WT32-ETH01-LAN-8720-RJ45 by ldijkman](https://github.com/ldijkman/WT32-ETH01-LAN-8720-RJ45-)
+- 🔗 [wt32-eth01 by egnor](https://github.com/egnor/wt32-eth01)
+
+---
+
+## 📌 License
+
+This project is open-source. Please check the [LICENSE](./LICENSE) file for more information.
