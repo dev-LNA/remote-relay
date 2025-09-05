@@ -141,7 +141,8 @@ static void mqtt_event_handler(void* event_handler_arg,
             int32_t data_to_send = (int32_t)strtol(payload,NULL,16);
             xQueueSend(v_relay_value_queue,&data_to_send,portMAX_DELAY);
         }
-            
+        
+        // Free usage memmory0
         free(topic);
 		free(payload);
         topic = NULL;

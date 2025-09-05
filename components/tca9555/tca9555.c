@@ -1,3 +1,8 @@
+/*
+ * User defined library for coonttrol of TCA9555
+ * Autors: Rafael M. Silva (rsilva@lna.br)
+ *         
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -10,9 +15,12 @@
 #include "tca9555.h"
 
 
-
-
-//
+// -------------------------------------------------------------------
+// TCA9555 Configuration 
+// - device: Device handler for communitation with
+// - bits: 16 bits register where each bit control TCA IO operation mode
+// -- 1: for input
+// -- 0: for output
 void tca_config_mode(i2c_master_dev_handle_t device, uint16_t bits)
 {
     // Send most significant bits
@@ -26,6 +34,12 @@ void tca_config_mode(i2c_master_dev_handle_t device, uint16_t bits)
     return;
 }
 
+// -------------------------------------------------------------------
+// TCA9555 Set (High level) outputs 
+// - device: Device handler for communitation with
+// - bits: 16 bits register where each bit control the output level
+// -- 1: Set for high level
+// -- 0: Keep the output in previous state
 void tca_set_outputs(i2c_master_dev_handle_t device, uint16_t bits)
 {
     uint8_t read_ports[2] = {0};
@@ -45,7 +59,12 @@ void tca_set_outputs(i2c_master_dev_handle_t device, uint16_t bits)
     return;
 }
 
-
+// -------------------------------------------------------------------
+// TCA9555 Clear (low level) outputs 
+// - device: Device handler for communitation with
+// - bits: 16 bits register where each bit control the output level
+// -- 1: Set for low level
+// -- 0: Keep the output in previous state
 void tca_clear_outputs(i2c_master_dev_handle_t device, uint16_t bits)
 {
     uint8_t read_ports[2] = {0};
@@ -65,6 +84,6 @@ void tca_clear_outputs(i2c_master_dev_handle_t device, uint16_t bits)
 
     return;
 }
-// ------------------------------------------------
+// -------------------------------------------------------------------
 // EOF
-// ------------------------------------------------
+// -------------------------------------------------------------------

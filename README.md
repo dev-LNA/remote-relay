@@ -64,7 +64,7 @@ If high or floating → normal boot mode
 > ⚠️ **Conflict Resolution**:  
 > To avoid conflicts, the oscillator is disabled at reset using **GPIO16**, and later re-enabled by software after boot.
 
-### 🧠 GPIO Summary
+### 🧠 LAN8720 interface GPIO Summary
 
 | Function         | GPIO Pin | Description                                  |
 |------------------|----------|----------------------------------------------|
@@ -95,6 +95,11 @@ If high or floating → normal boot mode
 - **GPIO35, GPIO36, GPIO39**: Input-only. Safe for sensing applications.
 
 ✅ **Wi-Fi** functionality remains available and unaffected.
+
+
+## ⚠️ Project Pinout
+- **GPIO 5**: TCA9555 I2C interface serial data.
+- **GPIO 17**:  TCA9555 I2C interface serial clock.
 
 ---
 
