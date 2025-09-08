@@ -3,7 +3,7 @@
  * Remote relay:
  * Project for load remote control using 
  * WT32-ETH0 and MQTT
- * Autors: Rafael M. Silva (rsilva@lna.br)
+ * Authors: Rafael M. Silva (rsilva@lna.br)
  *         
  */
 
@@ -30,6 +30,8 @@
 #include "user_i2c.h"
 #include "tca9555.h"
 
+#include "user_http_server.h"
+
 // ------------------------------------------------
 // Defines
 
@@ -42,7 +44,6 @@ extern QueueHandle_t v_relay_value_queue;
 // ------------------------------------------------
 // Local functions
 void vRelayHandler(void* pvParameters);
-
 
 // ------------------------------------------------
 // Main function
@@ -98,6 +99,10 @@ void app_main(void)
         ESP_LOGE(TAG,"!!!! Failure to start MQTT !!!!");
 
     
+    // -------------------------------------------
+    // Start web server
+    setup_server();
+
     while(true)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -122,7 +127,7 @@ void vRelayHandler(void* pvParameters)
         printf("Relay values: %d\n",relayData);
 
         // Change TCA Status
-        tca_set_outputs(tca,relayData);   //  Set gpio outputs
+        tca_set_outputs(tca,relayData);    //  Set gpio outputs
         tca_clear_outputs(tca,~relayData); // Clear complementar gpio outputs
     }
 }

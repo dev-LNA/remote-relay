@@ -1,6 +1,6 @@
 /*
  * User defined MQTT library
- * Autors: Rafael M. Silva (rsilva@lna.br)
+ * Authors: Rafael M. Silva (rsilva@lna.br)
  *         
  */
 

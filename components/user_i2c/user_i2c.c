@@ -1,6 +1,6 @@
 /*
  * User defined I2C library
- * Autors: Rafael M. Silva (rsilva@lna.br)
+ * Authors: Rafael M. Silva (rsilva@lna.br)
  *         
  */
 

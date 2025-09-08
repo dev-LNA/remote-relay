@@ -1,6 +1,6 @@
 /*
  * User defined library for coonttrol of TCA9555
- * Autors: Rafael M. Silva (rsilva@lna.br)
+ * Authors: Rafael M. Silva (rsilva@lna.br)
  *         
  */
 
