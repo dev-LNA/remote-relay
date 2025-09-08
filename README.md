@@ -129,26 +129,26 @@ The **TCA9555** is a **16-bit I/O expander** operating on a bidirectional **I²C
 
 ---
 
-## 📘 Register Map
+### 📘 Register Map
 
-#### Registers 0 and 1 (Input Port Registers) 
+##### Registers 0 and 1 (Input Port Registers) 
 The Input Port registers (registers 0 and 1) reflect the incoming logic levels of the pins, regardless of whether the pin is defined as an input or an output by the Configuration register. It only acts on read operation. Writes to these registers have no effect. The default value, X, is determined by the externally applied logic level. 
 
 <table border="1" cellpadding="5" cellspacing="0"> <tr> <th>Bit</th> <th>I0.7</th><th>I0.6</th><th>I0.5</th><th>I0.4</th> <th>I0.3</th><th>I0.2</th><th>I0.1</th><th>I0.0</th> </tr> <tr> <td>Default</td> <td>X</td><td>X</td><td>X</td><td>X</td> <td>X</td><td>X</td><td>X</td><td>X</td> </tr> <tr> <th>Bit</th> <th>I1.7</th><th>I1.6</th><th>I1.5</th><th>I1.4</th> <th>I1.3</th><th>I1.2</th><th>I1.1</th><th>I1.0</th> </tr> <tr> <td>Default</td> <td>X</td><td>X</td><td>X</td><td>X</td> <td>X</td><td>X</td><td>X</td><td>X</td> </tr> </table> 
 
 
-#### Registers 2 and 3 (Output Port Registers) 
+##### Registers 2 and 3 (Output Port Registers) 
 The Output Port registers (registers 2 and 3) show the outgoing logic levels of the pins defined as outputs by the Configuration register. Bit values in this register have no effect on pins defined as inputs. In turn, reads from this register reflect the value that is in the flip-flop controlling the output selection, not the actual pin value. 
 
 <table border="1" cellpadding="5" cellspacing="0"> <tr> <th>Bit</th> <th>O0.7</th><th>O0.6</th><th>O0.5</th><th>O0.4</th> <th>O0.3</th><th>O0.2</th><th>O0.1</th><th>O0.0</th> </tr> <tr> <td>Default</td> <td>1</td><td>1</td><td>1</td><td>1</td> <td>1</td><td>1</td><td>1</td><td>1</td> </tr> <tr> <th>Bit</th> <th>O1.7</th><th>O1.6</th><th>O1.5</th><th>O1.4</th> <th>O1.3</th><th>O1.2</th><th>O1.1</th><th>O1.0</th> </tr> <tr> <td>Default</td> <td>1</td><td>1</td><td>1</td><td>1</td> <td>1</td><td>1</td><td>1</td><td>1</td> </tr> </table> 
 
 
-#### Registers 4 and 5 (Polarity Inversion Registers) 
+##### Registers 4 and 5 (Polarity Inversion Registers) 
 The Polarity Inversion registers (registers 4 and 5) allow polarity inversion of pins defined as inputs by the Configuration register. If a bit in this register is set (written with 1), the corresponding port pin's polarity is inverted. If a bit in this register is cleared (written with a 0), the corresponding port pin's original polarity is retained. 
 
 <table border="1" cellpadding="5" cellspacing="0"> <tr> <th>Bit</th> <th>N0.7</th><th>N0.6</th><th>N0.5</th><th>N0.4</th> <th>N0.3</th><th>N0.2</th><th>N0.1</th><th>N0.0</th> </tr> <tr> <td>Default</td> <td>0</td><td>0</td><td>0</td><td>0</td> <td>0</td><td>0</td><td>0</td><td>0</td> </tr> <tr> <th>Bit</th> <th>N1.7</th><th>N1.6</th><th>N1.5</th><th>N1.4</th> <th>N1.3</th><th>N1.2</th><th>N1.1</th><th>N1.0</th> </tr> <tr> <td>Default</td> <td>0</td><td>0</td><td>0</td><td>0</td> <td>0</td><td>0</td><td>0</td><td>0</td> </tr> </table> 
 
-#### Registers 6 and 7 (Configuration Registers) 
+##### Registers 6 and 7 (Configuration Registers) 
 
 The Configuration registers (registers 6 and 7) configure the directions of the I/O pins. If a bit in this register is **set to 1**, the corresponding port pin is **enabled as an input** with a high-impedance output driver. If a bit in this register is **cleared to 0**, the corresponding port pin is **enabled as an output**. 
 
