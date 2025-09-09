@@ -101,7 +101,7 @@ void app_main(void)
     
     // -------------------------------------------
     // Start web server
-    setup_server();
+    // start_webserver();
 
     while(true)
     {

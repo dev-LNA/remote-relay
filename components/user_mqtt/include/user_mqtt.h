@@ -4,7 +4,7 @@
 #define USER_MQTT_H
 
 
-#define ESP_BROKER_URL "mqtt://192.168.2.103"
+#define ESP_BROKER_URL "mqtt://192.168.2.101"
 #define ESP_BROKER_PORT 1883
 
 #define RELAY_TOPIC_STATUS "relay/status"

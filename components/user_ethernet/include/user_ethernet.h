@@ -15,6 +15,8 @@
 #define ETH_RMII_RX1_EN     GPIO_NUM_26
 #define ETH_RMII_CRS_DV     GPIO_NUM_27
 
+#define USER_ETH_HOSTNAME "REMOTE-RELAY"
+
 #define STATIC_IP               0 // Change for 1 to use static IP configuration 
 #if STATIC_IP
     #define S_IP        "192.168.1.5"     

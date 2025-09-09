@@ -7,9 +7,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "esp_log.h"
 #include "esp_http_server.h"
 
-httpd_handle_t setup_server(void);
+// httpd_handle_t setup_server(void);
+httpd_handle_t start_webserver(void);
 
 
 

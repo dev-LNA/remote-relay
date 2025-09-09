@@ -186,6 +186,7 @@ esp_err_t ethernet_setup(void)
     // Create instance(s) of esp-netif for Ethernet(s)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t* eth_netif = esp_netif_new(&cfg);
+    esp_netif_set_hostname(eth_netif,USER_ETH_HOSTNAME);
     
     #if STATIC_IP /* STATIC_IP */
         if (esp_netif_dhcpc_stop(eth_netif) != ESP_OK) 
