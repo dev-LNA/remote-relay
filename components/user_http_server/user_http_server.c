@@ -6,31 +6,53 @@
 #include "user_http_server.h"
 
 static const char* TAG = "HTTP SERVER";
-static int outputs[] = {0, 0}; 
+static int outputs[16] = {0};
 
-static const char index_html[] = 
+extern QueueHandle_t v_relay_value_queue; // Queue for MQTT topic relay/value payload
+
+static const char index_html[] =
 "<!DOCTYPE html>"
 "<html>"
 "<head>"
 "  <meta charset='utf-8'>"
-"  <title>Controle Remoto</title>"
+"  <title>Remote Relay</title>"
 "  <style>"
-"    body { font-family: Arial; text-align: center; margin-top: 50px; }"
+"    body { font-family: Arial; text-align: center; margin-top: 30px; rgb(200,200,200);}"
+"    .grid {"
+"      display: grid;"
+"      grid-template-columns: repeat(8, 60px);"
+"      grid-gap: 15px;"
+"      justify-content: center;"
+"      margin-bottom: 20px;"
+"    }"
 "    .btn {"
-"      display: inline-block; padding: 15px 30px; margin: 10px;"
-"      font-size: 20px; border-radius: 10px; cursor: pointer; color: white;"
+"      width: 50px; height: 50px;"
+"      border-radius: 50%;"
+"      border: none;"
+"      cursor: pointer;"
+"      color: white;"
+"      font-size: 14px;"
 "    }"
 "    .on { background: green; }"
 "    .off { background: red; }"
 "  </style>"
 "</head>"
 "<body>"
-"  <h2>Controle de Cargas</h2>"
-"  <div>"
-"    <button id='btn0' class='btn off' onclick='toggle(0)'>OUT 0</button>"
-"    <button id='btn1' class='btn off' onclick='toggle(1)'>OUT 1</button>"
-"  </div>"
+"  <h2> Output status </h2>"
+"  <div class='grid' id='row1'></div>"
+"  <div class='grid' id='row2'></div>"
 "  <script>"
+"    function createButtons() {"
+"      for (let i = 0; i < 16; i++) {"
+"        let btn = document.createElement('button');"
+"        btn.id = 'btn'+i;"
+"        btn.className = 'btn off';"
+"        btn.innerText = i;"
+"        btn.onclick = () => toggle(i);"
+"        if (i < 8) document.getElementById('row1').appendChild(btn);"
+"        else document.getElementById('row2').appendChild(btn);"
+"      }"
+"    }"
 "    function toggle(pin) {"
 "      fetch(`/toggle?pin=${pin}`)"
 "      .then(r => r.json())"
@@ -53,12 +75,15 @@ static const char index_html[] =
 "      .then(r => r.json())"
 "      .then(data => updateUI(data));"
 "    }"
+"    createButtons();"
 "    setInterval(refresh, 2000);"
 "    refresh();"
 "  </script>"
 "</body>"
 "</html>";
 
+// ------------------------------------------------
+// Handler of initial (index) page
 static esp_err_t index_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "text/html");
@@ -66,46 +91,73 @@ static esp_err_t index_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// ------------------------------------------------
+// Handler do /status → returning a JSON
+// Status page handler, the webpage buttons status are 
+// updated according to the output states 
 static esp_err_t status_handler(httpd_req_t *req)
 {
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "{\"0\":%d,\"1\":%d}", outputs[0], outputs[1]);
+    char buffer[256];
+    int offset = 0;
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "{");
+    for (int i = 0; i < 16; i++) 
+    {
+        offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                           "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
+    }
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "}");
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
 
-
+// ------------------------------------------------
+// Handler of /toggle?pin=X
+// change the button status on WEB page click
 static esp_err_t toggle_handler(httpd_req_t *req)
 {
     char query[32];
-    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
+    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) 
+    {
         char param[8];
-        if (httpd_query_key_value(query, "pin", param, sizeof(param)) == ESP_OK) {
+        if (httpd_query_key_value(query, "pin", param, sizeof(param)) == ESP_OK) 
+        {
             int pin = atoi(param);
-            if (pin >= 0 && pin < 2) {
-                outputs[pin] = !outputs[pin]; // alterna o valor
+            if (pin >= 0 && pin < 16) 
+            {
+                outputs[pin] = !outputs[pin]; // 
                 ESP_LOGI(TAG, "Toggle pin %d -> %d", pin, outputs[pin]);
-                // Aqui no seu código real você faz a escrita no TCA9555
+                // Queue to write the value on TCA9555 
             }
         }
     }
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "{\"0\":%d,\"1\":%d}", outputs[0], outputs[1]);
+
+    char buffer[256];
+    int offset = 0;
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "{");
+    for (int i = 0; i < 16; i++) 
+    {
+        offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                           "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
+    }
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "}");
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
 
+// ------------------------------------------------
 httpd_handle_t start_webserver(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     httpd_handle_t server = NULL;
 
-    if (httpd_start(&server, &config) == ESP_OK) {
-        httpd_uri_t uri_index = {
+    if (httpd_start(&server, &config) == ESP_OK) 
+    {
+        httpd_uri_t uri_index = 
+        {
             .uri       = "/",
             .method    = HTTP_GET,
             .handler   = index_handler,
@@ -113,7 +165,8 @@ httpd_handle_t start_webserver(void)
         };
         httpd_register_uri_handler(server, &uri_index);
 
-        httpd_uri_t uri_status = {
+        httpd_uri_t uri_status = 
+        {
             .uri       = "/status",
             .method    = HTTP_GET,
             .handler   = status_handler,
@@ -121,7 +174,8 @@ httpd_handle_t start_webserver(void)
         };
         httpd_register_uri_handler(server, &uri_status);
 
-        httpd_uri_t uri_toggle = {
+        httpd_uri_t uri_toggle = 
+        {
             .uri       = "/toggle",
             .method    = HTTP_GET,
             .handler   = toggle_handler,
@@ -133,6 +187,10 @@ httpd_handle_t start_webserver(void)
     }
     return server;
 }
+
+// ------------------------------------------------
+// EOF
+// ------------------------------------------------
 
 /*
 static char resp[] = "<!DOCTYPE html><html> </html> <body>  <h2>ESP32 WEB SERVER</h2> </body>";

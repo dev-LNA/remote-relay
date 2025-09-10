@@ -31,7 +31,7 @@ static const char* TAG = "MQTT";
 static EventGroupHandle_t s_mqtt_event_group = NULL;
 static esp_mqtt_client_handle_t client = NULL;
 
-QueueHandle_t v_relay_value_queue; // Queue for MQTT topic relay/value payload
+extern QueueHandle_t v_relay_value_queue; // Queue for MQTT topic relay/value payload
 
 // ------------------------------------------------------
 // Log errors from TCP layer 
@@ -207,10 +207,6 @@ esp_err_t user_mqtt_start(void)
     if(bits&MQTT_CONNECTED_BIT)
     {
         ESP_LOGI(TAG,"Connected to Broker: %s",ESP_BROKER_URL);
-
-        // Create a queue for transfer data between tasks
-        v_relay_value_queue = xQueueCreate(1,sizeof(int32_t));
-
         err = ESP_OK;
     }
     else if(bits&MQTT_DISCONNECTED_BIT)

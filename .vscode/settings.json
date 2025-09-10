@@ -21,7 +21,12 @@
         "i2c_master.h": "c",
         "stdio.h": "c",
         "user_i2c.h": "c",
-        "esp_http_server.h": "c"
+        "esp_http_server.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c",
+        "user_http_server.h": "c"
     },
     "idf.portWin": "COM7",
     "idf.flashType": "UART"

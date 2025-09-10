@@ -43,6 +43,8 @@ void tca_config_mode(i2c_master_dev_handle_t device, uint16_t bits);
 void tca_set_outputs(i2c_master_dev_handle_t device, uint16_t bits);
 void tca_clear_outputs(i2c_master_dev_handle_t device, uint16_t bits);
 
+uint16_t tca_get_outputs(i2c_master_dev_handle_t device);
+
 #endif
 // ------------------------------------------------
 // EOF

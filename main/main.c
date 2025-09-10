@@ -32,6 +32,8 @@
 
 #include "user_http_server.h"
 
+#include "relay_defs.h"
+
 // ------------------------------------------------
 // Defines
 
@@ -39,7 +41,9 @@
 // Global variables
 static const char* TAG = "MAIN";
 TaskHandle_t relayTaskHandle = NULL;
-extern QueueHandle_t v_relay_value_queue;
+QueueHandle_t v_relay_value_queue;
+
+tca_exchange_t xrelay_data; 
 
 // ------------------------------------------------
 // Local functions
@@ -58,6 +62,10 @@ void app_main(void)
     } 
     ESP_ERROR_CHECK(err);
 
+    // ------------------------------------------------ 
+    // Create a queue for transfer data between tasks with TC9555
+    v_relay_value_queue = xQueueCreate(1,sizeof(int32_t));
+
     // ------------------------------------------------
     // I2C initialization 
     ESP_LOGI(TAG,"I2C initialization ...");
@@ -68,9 +76,16 @@ void app_main(void)
 
     if(i2c_master_probe(i2c0BusHandler,TCA9555_ADDR,10) == ESP_OK)
     {
+        int value = 0x0000;
         ESP_LOGI(TAG,"Device at address 0x%x  was detected.",TCA9555_ADDR);
         tca_config_mode(i2c0TCA9555, 0x0000); // Define all pins as outputs
-        tca_clear_outputs(i2c0TCA9555,0xFFFF); // Clear all pins
+
+        // Create an task to handle relay data
+        xTaskCreate(vRelayHandler,"Relay",configMINIMAL_STACK_SIZE+1024,
+                    (void*)i2c0TCA9555,5,&relayTaskHandle);
+        
+        xQueueSend(v_relay_value_queue,&value,portMAX_DELAY);
+
     }
     else 
         ESP_LOGW(TAG,"!!!! Failure to initialize I2C bus device !!!!");
@@ -78,6 +93,7 @@ void app_main(void)
 
     // -------------------------------------------
     // Initialize WiFi Station
+    vTaskDelay(pdMS_TO_TICKS(100)); // wait 
     ESP_LOGI(TAG,"Ethernet initialization.");
     ESP_ERROR_CHECK(ethernet_setup());
     // -------------------------------------------
@@ -90,10 +106,6 @@ void app_main(void)
 
         // Subscribe on topi "relay/value" to control digital outputs values
         user_mqtt_subscribe(RELAY_TOPIC_VALUE,1);   
-
-        // Create an task to handle MQTT relay data
-        xTaskCreate(vRelayHandler,"Relay",configMINIMAL_STACK_SIZE+1024,
-                    (void*)i2c0TCA9555,1,&relayTaskHandle);
     }
     else 
         ESP_LOGE(TAG,"!!!! Failure to start MQTT !!!!");
@@ -101,7 +113,7 @@ void app_main(void)
     
     // -------------------------------------------
     // Start web server
-    // start_webserver();
+    start_webserver();
 
     while(true)
     {
@@ -112,7 +124,7 @@ void app_main(void)
 
 
 // ------------------------------------------------
-// Task for handle MQTT topic "relay/value"
+// Task for handle TCA9555
 void vRelayHandler(void* pvParameters)
 {
     // Get the I2C device hadler to work with 
@@ -124,13 +136,15 @@ void vRelayHandler(void* pvParameters)
         xQueueReceive(v_relay_value_queue,&rawData,portMAX_DELAY);
 
         relayData = (uint16_t)(0x0000FFFF&rawData);
-        printf("Relay values: %d\n",relayData);
+        printf("Relay values: 0x%x\n",relayData);
 
         // Change TCA Status
         tca_set_outputs(tca,relayData);    //  Set gpio outputs
         tca_clear_outputs(tca,~relayData); // Clear complementar gpio outputs
     }
 }
+
+
 
 // ------------------------------------------------
 // EOF
