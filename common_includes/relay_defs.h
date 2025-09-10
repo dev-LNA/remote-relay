@@ -5,8 +5,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 
 typedef enum 
 {
@@ -17,8 +15,7 @@ typedef enum
 typedef struct 
 {
     i2c_req_type_t type;
-    uint16_t       bits;
-    QueueHandle_t  resp_q; // fila para resposta (criada pela task chamadora)
-} tca_exchange_t;
+    int32_t       data;
+} tca_data_exchange_t;
 
 #endif

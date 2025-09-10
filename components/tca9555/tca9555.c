@@ -105,7 +105,7 @@ uint16_t tca_get_outputs(i2c_master_dev_handle_t device)
     i2c_receive(device, TCA9555_IN_PORT0, read_ports, 2);
 
     bits = (0xFF & read_ports[1]) << 8; // Get MSBs
-    bits = (0xFF & read_ports[0]); // Get LSBs
+    bits = bits | (0xFF & read_ports[0]); // Get LSBs
 
     return bits;
 }

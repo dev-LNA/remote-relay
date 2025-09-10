@@ -8,7 +8,8 @@
 static const char* TAG = "HTTP SERVER";
 static int outputs[16] = {0};
 
-extern QueueHandle_t v_relay_value_queue; // Queue for MQTT topic relay/value payload
+extern QueueHandle_t v_relay_get_queue;
+extern QueueHandle_t v_relay_set_queue;
 
 static const char index_html[] =
 "<!DOCTYPE html>"
@@ -17,7 +18,7 @@ static const char index_html[] =
 "  <meta charset='utf-8'>"
 "  <title>Remote Relay</title>"
 "  <style>"
-"    body { font-family: Arial; text-align: center; margin-top: 30px; rgb(200,200,200);}"
+"    body { font-family: Arial; text-align: center; margin-top: 30px; rgba(155, 155, 155, 1);}"
 "    .grid {"
 "      display: grid;"
 "      grid-template-columns: repeat(8, 60px);"
@@ -92,13 +93,30 @@ static esp_err_t index_handler(httpd_req_t *req)
 }
 
 // ------------------------------------------------
-// Handler do /status → returning a JSON
+// Handler of /status → returning a JSON
 // Status page handler, the webpage buttons status are 
 // updated according to the output states 
 static esp_err_t status_handler(httpd_req_t *req)
 {
     char buffer[256];
     int offset = 0;
+    uint16_t relayData = 0;
+    tca_data_exchange_t x_relay_http;
+
+    x_relay_http.type = TCA_READ;
+    xQueueSend(v_relay_set_queue,&x_relay_http,portMAX_DELAY); // request TCA data
+    xQueueReceive(v_relay_get_queue,&x_relay_http,portMAX_DELAY); // receive TCA data
+    ESP_LOGI(TAG,"Received data: %d",x_relay_http.data);
+    
+    relayData = (uint16_t)(x_relay_http.data&0x0000FFFF);
+    printf("HTTP Status data: %d\n",relayData);
+    for(int i = 0; i < 16; i++)
+    {
+        outputs[i] = ((relayData >> i) & 0x0001);
+        printf("Output %d = %d, ",i,outputs[i]);
+    }
+    printf("\n");
+        
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "{");
     for (int i = 0; i < 16; i++) 
     {
@@ -118,6 +136,9 @@ static esp_err_t status_handler(httpd_req_t *req)
 static esp_err_t toggle_handler(httpd_req_t *req)
 {
     char query[32];
+    uint16_t relayData = 0;
+    tca_data_exchange_t x_relay_http;
+
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) 
     {
         char param[8];
@@ -129,6 +150,12 @@ static esp_err_t toggle_handler(httpd_req_t *req)
                 outputs[pin] = !outputs[pin]; // 
                 ESP_LOGI(TAG, "Toggle pin %d -> %d", pin, outputs[pin]);
                 // Queue to write the value on TCA9555 
+                for(int i = 0; i< 16; i++)
+                    relayData = relayData | ((0x1 & outputs[i]) << i);
+                printf("HTTP Toggle: 0x%x\n",relayData);
+                x_relay_http.type = TCA_WRITE;
+                x_relay_http.data = relayData;
+                xQueueSend(v_relay_set_queue,&x_relay_http,portMAX_DELAY); // request TCA data
             }
         }
     }

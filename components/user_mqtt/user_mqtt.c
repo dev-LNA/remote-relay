@@ -19,6 +19,8 @@
 #include "freertos/queue.h"
 #include "user_mqtt.h"
 
+#include "relay_defs.h"
+
 // ------------------------------------------------------
 // Defines
 #define MQTT_CONNECTED_BIT     BIT0
@@ -31,7 +33,10 @@ static const char* TAG = "MQTT";
 static EventGroupHandle_t s_mqtt_event_group = NULL;
 static esp_mqtt_client_handle_t client = NULL;
 
-extern QueueHandle_t v_relay_value_queue; // Queue for MQTT topic relay/value payload
+extern QueueHandle_t v_relay_get_queue;
+extern QueueHandle_t v_relay_set_queue;
+
+tca_data_exchange_t x_relay_mqtt;
 
 // ------------------------------------------------------
 // Log errors from TCP layer 
@@ -138,8 +143,9 @@ static void mqtt_event_handler(void* event_handler_arg,
         // Check the received topic
         if(strcmp(RELAY_TOPIC_VALUE,topic) == 0)
         {
-            int32_t data_to_send = (int32_t)strtol(payload,NULL,16);
-            xQueueSend(v_relay_value_queue,&data_to_send,portMAX_DELAY);
+            x_relay_mqtt.type = TCA_WRITE;
+            x_relay_mqtt.data = (int32_t)strtol(payload,NULL,16);
+            xQueueSend(v_relay_set_queue,&x_relay_mqtt,portMAX_DELAY);
         }
         
         // Free usage memmory0
