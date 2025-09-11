@@ -44,8 +44,7 @@ TaskHandle_t relayTaskHandle = NULL;
 QueueHandle_t v_relay_get_queue;
 QueueHandle_t v_relay_set_queue;
 
-tca_data_exchange_t x_relay_data; 
-
+// relay_status_t relay_flags = RELAY_FLAGS_DEFAULT;
 // ------------------------------------------------
 // Local functions
 void vRelayHandler(void* pvParameters);
@@ -64,7 +63,7 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     // ------------------------------------------------ 
-    // Create a queue for transfer data between tasks with TC9555
+    // Create a queue for transfer data between tasks with TCA9555
     v_relay_get_queue  = xQueueCreate(2,sizeof(tca_data_exchange_t));
     v_relay_set_queue  = xQueueCreate(2,sizeof(tca_data_exchange_t));
 
@@ -80,17 +79,12 @@ void app_main(void)
     {
         ESP_LOGI(TAG,"Device at address 0x%x  was detected.",TCA9555_ADDR);
         vTaskDelay(pdMS_TO_TICKS(100)); // wait 
-        tca_config_mode(i2c0TCA9555, 0x0000); // Define all pins as outputs
-        
+        tca_config_mode(i2c0TCA9555, 0x0000);   // Define all pins as outputs
+        tca_clear_outputs(i2c0TCA9555,0xFFFF);  // Clear gpio outputs
 
         // Create a task to handle relay data exchange with I2C
         xTaskCreate(vRelayHandler,"Relay",configMINIMAL_STACK_SIZE+1024,
                     (void*)i2c0TCA9555,5,&relayTaskHandle);
-        
-        x_relay_data.type = TCA_WRITE;
-        x_relay_data.data = 0x0000;
-        xQueueSend(v_relay_set_queue,&x_relay_data,portMAX_DELAY);
-
     }
     else 
         ESP_LOGW(TAG,"Failure to initialize I2C bus device !!!!");
@@ -133,19 +127,19 @@ void vRelayHandler(void* pvParameters)
 {
     // Get the I2C device hadler to work with 
     i2c_master_dev_handle_t tca =  (i2c_master_dev_handle_t)pvParameters;
-    static uint16_t relayData = 0, actualData = 0;
+    tca_data_exchange_t rawData;
+    uint16_t relayData = 0;
+    static uint16_t actualData = 0;
     while(true)
     {
-        tca_data_exchange_t rawData;
-        
-        xQueueReceive(v_relay_set_queue,&rawData,portMAX_DELAY);
+        xQueueReceive(v_relay_set_queue,&rawData,portMAX_DELAY); // Wait for a requisition (read or write)
 
-        if(rawData.type == TCA_WRITE)
+        if(rawData.type == TCA_WRITE) 
         {
             relayData = (uint16_t)(0x0000FFFF&(rawData.data));
-            tca_set_outputs(tca,relayData);             //  Set gpio outputs
-            tca_clear_outputs(tca,~relayData);          // Clear complementar gpio outputs
-            actualData = tca_get_outputs(tca);
+            tca_set_outputs(tca,relayData);      //  Set gpio outputs
+            tca_clear_outputs(tca,~relayData);   // Clear complementar gpio outputs
+            actualData = tca_get_outputs(tca);   // Read the actual status from I2C 
         }
         else if(rawData.type == TCA_READ)
         {
