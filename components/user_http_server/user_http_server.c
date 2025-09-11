@@ -60,7 +60,7 @@ static const char index_html[] =
 "  </style>"
 "</head>"
 "<body>"
-"  <h2>Controle de 16 Saídas</h2>"
+"  <h2>Remote Relay WEB Control</h2>"
 "  <div class='grid' id='row1'></div>"
 "  <div class='grid' id='row2'></div>"
 "  <script>"
@@ -128,19 +128,14 @@ static esp_err_t status_handler(httpd_req_t *req)
     xQueueSend(v_relay_set_queue,&x_relay_http,portMAX_DELAY); // request TCA data
     xQueueReceive(v_relay_get_queue,&x_relay_http,portMAX_DELAY); // receive TCA data
     ESP_LOGI(TAG,"Received data: %d",x_relay_http.data);
-    
     relayData = (uint16_t)(x_relay_http.data&0x0000FFFF);
-    printf("HTTP Status data: %d\n",relayData);
-    for(int i = 0; i < 16; i++)
-    {   
-        outputs[i] = (bool)((relayData >> i) & 0x0001);
-        printf("Output %d = %d, ",i,outputs[i]);
-    }
-    printf("\n");
-        
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "{");
+
+    ESP_LOGI(TAG,"Status: %d\n", relayData);    
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "{"); // create a JSON File to update the web page
     for (int i = 0; i < 16; i++) 
     {
+        outputs[i] = (bool)((relayData >> i) & 0x0001); // update outputs according to TCA state
+
         offset += snprintf(buffer + offset, sizeof(buffer) - offset,
                 "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
     }
