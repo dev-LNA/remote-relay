@@ -6,7 +6,7 @@
 #include "user_http_server.h"
 
 static const char* TAG = "HTTP SERVER";
-static int outputs[16] = {0};
+static bool outputs[16] = {0};
 
 extern QueueHandle_t v_relay_get_queue;
 extern QueueHandle_t v_relay_set_queue;
@@ -16,30 +16,51 @@ static const char index_html[] =
 "<html>"
 "<head>"
 "  <meta charset='utf-8'>"
-"  <title>Remote Relay</title>"
+"  <title>Output status</title>"
 "  <style>"
-"    body { font-family: Arial; text-align: center; margin-top: 30px; rgba(155, 155, 155, 1);}"
+"    body {"
+"      font-family: Arial, sans-serif;"
+"      text-align: center;"
+"      margin: 0;"
+"      padding: 20px;"
+"      background: #f4f6f8;"
+"      color: #333;"
+"    }"
+"    h2 {"
+"      margin-bottom: 20px;"
+"    }"
 "    .grid {"
 "      display: grid;"
-"      grid-template-columns: repeat(8, 60px);"
+"      grid-template-columns: repeat(8, 70px);"
 "      grid-gap: 15px;"
 "      justify-content: center;"
 "      margin-bottom: 20px;"
 "    }"
 "    .btn {"
-"      width: 50px; height: 50px;"
+"      width: 60px; height: 60px;"
 "      border-radius: 50%;"
 "      border: none;"
 "      cursor: pointer;"
-"      color: white;"
+"      color: #fff;"
 "      font-size: 14px;"
+"      font-weight: bold;"
+"      box-shadow: 0 3px 6px rgba(0,0,0,0.2);"
+"      transition: transform 0.15s, box-shadow 0.2s;"
 "    }"
-"    .on { background: green; }"
-"    .off { background: red; }"
+"    .btn:active {"
+"      transform: scale(0.92);"
+"      box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+"    }"
+"    .on {"
+"      background: linear-gradient(145deg, #28a745, #218838);"
+"    }"
+"    .off {"
+"      background: linear-gradient(145deg, #dc3545, #c82333);"
+"    }"
 "  </style>"
 "</head>"
 "<body>"
-"  <h2> Output status </h2>"
+"  <h2>Controle de 16 Saídas</h2>"
 "  <div class='grid' id='row1'></div>"
 "  <div class='grid' id='row2'></div>"
 "  <script>"
@@ -111,8 +132,8 @@ static esp_err_t status_handler(httpd_req_t *req)
     relayData = (uint16_t)(x_relay_http.data&0x0000FFFF);
     printf("HTTP Status data: %d\n",relayData);
     for(int i = 0; i < 16; i++)
-    {
-        outputs[i] = ((relayData >> i) & 0x0001);
+    {   
+        outputs[i] = (bool)((relayData >> i) & 0x0001);
         printf("Output %d = %d, ",i,outputs[i]);
     }
     printf("\n");
@@ -121,7 +142,7 @@ static esp_err_t status_handler(httpd_req_t *req)
     for (int i = 0; i < 16; i++) 
     {
         offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                           "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
+                "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
     }
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "}");
     httpd_resp_set_type(req, "application/json");
@@ -151,8 +172,9 @@ static esp_err_t toggle_handler(httpd_req_t *req)
                 ESP_LOGI(TAG, "Toggle pin %d -> %d", pin, outputs[pin]);
                 // Queue to write the value on TCA9555 
                 for(int i = 0; i< 16; i++)
-                    relayData = relayData | ((0x1 & outputs[i]) << i);
+                    relayData = relayData | (outputs[i] << i);
                 printf("HTTP Toggle: 0x%x\n",relayData);
+
                 x_relay_http.type = TCA_WRITE;
                 x_relay_http.data = relayData;
                 xQueueSend(v_relay_set_queue,&x_relay_http,portMAX_DELAY); // request TCA data
@@ -218,44 +240,75 @@ httpd_handle_t start_webserver(void)
 // ------------------------------------------------
 // EOF
 // ------------------------------------------------
-
 /*
-static char resp[] = "<!DOCTYPE html><html> </html> <body>  <h2>ESP32 WEB SERVER</h2> </body>";
-
-
-static esp_err_t send_web_page(httpd_req_t* req)
-{  
-    esp_err_t response; 
-    response = httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
-
-    return response;
-}
-
-static esp_err_t get_req_handler(httpd_req_t* req)
-{
-    return send_web_page(req);
-}
-
-static httpd_uri_t uri_get = 
-{
-    .uri = "/",
-    .method = HTTP_GET,
-    .handler = get_req_handler,
-    .user_ctx = NULL
-};
-
-httpd_handle_t setup_server(void)
-{
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    httpd_handle_t server = NULL;
-
-    if(httpd_start(&server,&config) == ESP_OK)
-    {
-        httpd_register_uri_handler(server,&uri_get);
-    }
-
-    
-
-    return server;
-}
-   */ 
+static const char index_html[] =
+"<!DOCTYPE html>"
+"<html>"
+"<head>"
+"  <meta charset='utf-8'>"
+"  <title>Remote Relay</title>"
+"  <style>"
+"    body { font-family: Arial; text-align: center; margin-top: 30px; rgba(94, 93, 93, 1);}"
+"    .grid {"
+"      display: grid;"
+"      grid-template-columns: repeat(8, 60px);"
+"      grid-gap: 15px;"
+"      justify-content: center;"
+"      margin-bottom: 20px;"
+"    }"
+"    .btn {"
+"      width: 50px; height: 50px;"
+"      border-radius: 50%;"
+"      border: none;"
+"      cursor: pointer;"
+"      color: white;"
+"      font-size: 14px;"
+"    }"
+"    .on { background: green; }"
+"    .off { background: red; }"
+"  </style>"
+"</head>"
+"<body>"
+"  <h2> Output status </h2>"
+"  <div class='grid' id='row1'></div>"
+"  <div class='grid' id='row2'></div>"
+"  <script>"
+"    function createButtons() {"
+"      for (let i = 0; i < 16; i++) {"
+"        let btn = document.createElement('button');"
+"        btn.id = 'btn'+i;"
+"        btn.className = 'btn off';"
+"        btn.innerText = i;"
+"        btn.onclick = () => toggle(i);"
+"        if (i < 8) document.getElementById('row1').appendChild(btn);"
+"        else document.getElementById('row2').appendChild(btn);"
+"      }"
+"    }"
+"    function toggle(pin) {"
+"      fetch(`/toggle?pin=${pin}`)"
+"      .then(r => r.json())"
+"      .then(data => updateUI(data));"
+"    }"
+"    function updateUI(states) {"
+"      for (let pin in states) {"
+"        let btn = document.getElementById('btn'+pin);"
+"        if (states[pin] == 1) {"
+"          btn.classList.remove('off');"
+"          btn.classList.add('on');"
+"        } else {"
+"          btn.classList.remove('on');"
+"          btn.classList.add('off');"
+"        }"
+"      }"
+"    }"
+"    function refresh() {"
+"      fetch('/status')"
+"      .then(r => r.json())"
+"      .then(data => updateUI(data));"
+"    }"
+"    createButtons();"
+"    setInterval(refresh, 2000);"
+"    refresh();"
+"  </script>"
+"</body>"
+"</html>"; */
