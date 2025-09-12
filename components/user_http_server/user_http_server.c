@@ -125,8 +125,10 @@ static esp_err_t status_handler(httpd_req_t *req)
     tca_data_exchange_t x_relay_http;
 
     x_relay_http.type = TCA_READ;
-    xQueueSend(v_relay_set_queue,&x_relay_http,portMAX_DELAY); // request TCA data
-    xQueueReceive(v_relay_get_queue,&x_relay_http,portMAX_DELAY); // receive TCA data
+    xQueueSend(v_relay_set_queue,&x_relay_http,pdMS_TO_TICKS(50)); // request TCA data
+    
+    xQueueReceive(v_relay_get_queue,&x_relay_http,pdMS_TO_TICKS(300)); // receive TCA data
+    
     ESP_LOGI(TAG,"Received data: %d",x_relay_http.data);
     relayData = (uint16_t)(x_relay_http.data&0x0000FFFF);
 
@@ -137,7 +139,7 @@ static esp_err_t status_handler(httpd_req_t *req)
         outputs[i] = (bool)((relayData >> i) & 0x0001); // update outputs according to TCA state
 
         offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
+            "\"%d\":%d%s", i, outputs[i], (i < 15 ? "," : ""));
     }
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "}");
     httpd_resp_set_type(req, "application/json");

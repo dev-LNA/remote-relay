@@ -64,8 +64,8 @@ void app_main(void)
 
     // ------------------------------------------------ 
     // Create a queue for transfer data between tasks with TCA9555
-    v_relay_get_queue  = xQueueCreate(2,sizeof(tca_data_exchange_t));
-    v_relay_set_queue  = xQueueCreate(2,sizeof(tca_data_exchange_t));
+    v_relay_get_queue  = xQueueCreate(5,sizeof(tca_data_exchange_t));
+    v_relay_set_queue  = xQueueCreate(5,sizeof(tca_data_exchange_t));
 
     // ------------------------------------------------
     // I2C initialization 
@@ -144,7 +144,7 @@ void vRelayHandler(void* pvParameters)
         else if(rawData.type == TCA_READ)
         {
             rawData.data = actualData;
-            xQueueSend(v_relay_get_queue,&rawData,portMAX_DELAY);
+            xQueueSend(v_relay_get_queue,&rawData,100);
         }
         printf("Relay values: 0x%x\n",actualData);
     }

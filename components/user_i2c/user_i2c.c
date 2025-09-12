@@ -61,7 +61,7 @@ esp_err_t i2c_send_byte(i2c_master_dev_handle_t device, uint8_t address, uint8_t
 
     reg[0] = address;
     reg[1] = data;
-    err = i2c_master_transmit(device,reg,2,10);
+    err = i2c_master_transmit(device,reg,2,50);
 
     return err;
 }
@@ -72,7 +72,7 @@ esp_err_t i2c_receive_byte(i2c_master_dev_handle_t device, uint8_t address, uint
 {
     esp_err_t err = ESP_OK;
 
-    err = i2c_master_transmit_receive(device,&address,1,data,1,10);
+    err = i2c_master_transmit_receive(device,&address,1,data,1,50);
 
     return err;
 }
@@ -83,7 +83,7 @@ esp_err_t i2c_receive(i2c_master_dev_handle_t device, uint8_t address, uint8_t* 
 {
     esp_err_t err = ESP_OK;
 
-    err = i2c_master_transmit_receive(device,&address,1,data,size,10);
+    err = i2c_master_transmit_receive(device,&address,1,data,size,50);
 
     return err;
 
