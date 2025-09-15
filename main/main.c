@@ -46,7 +46,7 @@ QueueHandle_t v_relay_get_queue;
 QueueHandle_t v_relay_set_queue;
 QueueHandle_t v_relay_mqtt_pub; 
 
-// relay_status_t relay_flags = RELAY_FLAGS_DEFAULT;
+RelayCtrlFlags relay_flags;
 // ------------------------------------------------
 // Local functions
 void vRelayHandler(void* pvParameters);
@@ -84,39 +84,61 @@ void app_main(void)
         ESP_LOGI(TAG,"Device at address 0x%x  was detected.",TCA9555_ADDR);
         vTaskDelay(pdMS_TO_TICKS(100)); // wait 
         tca_config_mode(i2c0TCA9555, 0x0000);   // Define all pins as outputs
-        tca_clear_outputs(i2c0TCA9555,0xFFFF);  // Clear gpio outputs
+        tca_set(i2c0TCA9555,0x0000); // Clear gpio outputs
+        // tca_clear_outputs(i2c0TCA9555,0xFFFF);  
 
         // Create a task to handle relay data exchange with I2C
         xTaskCreate(vRelayHandler,"Relay",configMINIMAL_STACK_SIZE+1024,
                     (void*)i2c0TCA9555,5,&relayTaskHandle);
-        xTaskCreate(vMQTTPublish,"MQTTPub",configMINIMAL_STACK_SIZE+1024,
-                    NULL,2,&mqttPubTaskHandle);
     }
     else 
-        ESP_LOGW(TAG,"Failure to initialize I2C bus device !!!!");
-    ESP_LOGI(TAG,"Done.");
+    {
+        ESP_LOGW(TAG,"Failure to initialize I2C bus device.");
+        relay_flags.bit.i2c_fail = true;
+    }
 
     // -------------------------------------------
     // Initialize WiFi Station
     ESP_LOGI(TAG,"Ethernet initialization.");
-    ESP_ERROR_CHECK(ethernet_setup());
+
+    if(relay_flags.all == 0)
+    {
+        if(ethernet_setup() != ESP_OK)
+        {
+            relay_flags.bit.ethernet_fail = true;
+            ESP_LOGW(TAG,"Failure to initialize ethernet connection.");
+        } 
+    }
+    
     // -------------------------------------------
     // Initialize MQTT
     ESP_LOGI(TAG,"MQTT initialization.");
-    if(user_mqtt_start() == ESP_OK)
+    if(relay_flags.all == 0)
     {
-        // Write on relay/topic status and change relay to "online"
-        user_mqtt_publish(TOPIC_RELAY_STATUS,"Online",1,true);
+         if(user_mqtt_start() == ESP_OK)
+        {
+            xTaskCreate(vMQTTPublish,"MQTTPub",configMINIMAL_STACK_SIZE+1024,
+                    NULL,2,&mqttPubTaskHandle);
 
-        // Subscribe on topi "relay/value" to control digital outputs values
-        user_mqtt_subscribe(TOPIC_RELAY_SET,1);   
+            // Write on relay/topic status and change relay to "online"
+            user_mqtt_publish(TOPIC_RELAY_STATUS,"Online",1,true);
+            // Subscribe on topi "relay/value" to control digital outputs values
+            user_mqtt_subscribe(TOPIC_RELAY_SET,1);   
+        }
+        else 
+        {
+            ESP_LOGE(TAG,"Failure to start MQTT.");
+            relay_flags.bit.mqtt_fail = true;
+        }
     }
-    else 
-        ESP_LOGE(TAG,"Failure to start MQTT !!!!");
+   
     
     // -------------------------------------------
     // Start web server
-    start_webserver();
+    if(relay_flags.all == 0)
+        start_webserver();
+    else 
+        ESP_LOGE(TAG,"System cannot be started.");
 
     while(true)
     {

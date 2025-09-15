@@ -23,13 +23,21 @@ typedef struct
 } tca_data_exchange_t;
 
 // ----------------------------------------------
-typedef struct 
-{
-    bool i2c_ready;
-    bool ethernet_ready;
-    bool broker_ready;
-} relay_status_t;
 
-#define RELAY_FLAGS_DEFAULT {false, false, false}
+struct CtrlFlagsBits
+{
+    bool i2c_fail:1;
+    bool ethernet_fail:1;
+    bool mqtt_fail:1;
+    uint16_t RSV:13;
+};
+
+typedef union CtrlFlagsReg
+{
+    uint16_t all;
+    struct CtrlFlagsBits bit;
+} RelayCtrlFlags;
+
+#define RELAY_FLAGS_DEFAULT 0x0
 
 #endif
