@@ -36,14 +36,14 @@
 #define TCA_P1B6 0x4000 // 01000000 00000000
 #define TCA_P1B7 0x8000 // 10000000 00000000
 
-
-
-
 void tca_config_mode(i2c_master_dev_handle_t device, uint16_t bits);
 void tca_set_outputs(i2c_master_dev_handle_t device, uint16_t bits);
 void tca_clear_outputs(i2c_master_dev_handle_t device, uint16_t bits);
 
 uint16_t tca_get_outputs(i2c_master_dev_handle_t device);
+
+void tca_set(i2c_master_dev_handle_t device, uint16_t bits);
+uint16_t tca_get(i2c_master_dev_handle_t device);
 
 #endif
 // ------------------------------------------------

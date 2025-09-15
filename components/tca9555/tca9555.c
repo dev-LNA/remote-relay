@@ -14,7 +14,6 @@
 #include "user_i2c.h"
 #include "tca9555.h"
 
-
 // -------------------------------------------------------------------
 // TCA9555 Configuration 
 // - device: Device handler for communitation with
@@ -90,7 +89,7 @@ void tca_clear_outputs(i2c_master_dev_handle_t device, uint16_t bits)
 }
 
 // -------------------------------------------------------------------
-// TCA9555 Clear (low level) outputs 
+// TCA9555 Get TCA pins states
 // - device: Device handler for communitation with
 // - bits: 16 bits register where each bit control the output level
 // -- 1: Set for low level
@@ -110,6 +109,46 @@ uint16_t tca_get_outputs(i2c_master_dev_handle_t device)
     return bits;
 }
 
+
+// -------------------------------------------------------------------
+// TCA9555 Set 
+// - device: Device handler for communitation with
+// - bits: 16 bits register where each bit control the output level
+// -- 1: Set for high level
+// -- 0: Clear pin to low level
+void tca_set(i2c_master_dev_handle_t device, uint16_t bits)
+{
+    uint8_t reg[] = {0, 0, 0};
+    reg[0] = TCA9555_OUT_PORT0;
+    reg[1] = (uint8_t)(0x00FF & bits);
+    reg[2] = (uint8_t)((0xFF00 & bits) >> 8);
+    ESP_ERROR_CHECK(i2c_master_transmit(device,reg,3,50));
+
+    return;
+}
+
+
+// -------------------------------------------------------------------
+// Get TCA pins states
+// - device: Device handler for communitation with
+// - bits: 16 bits register where each bit control the output level
+// -- 1: Set for low level
+// -- 0: Keep the output in previous state
+uint16_t tca_get(i2c_master_dev_handle_t device)
+{
+    uint8_t  address =  TCA9555_IN_PORT0;
+    uint8_t  read_ports[] = {0,0};
+    uint16_t bits = 0;
+    // Read the port actual status
+    // TCA9555_IN_PORTx reflects the incoming logic levels of the pins,
+    // regardless of whether the pin is IN or OUT
+    ESP_ERROR_CHECK(i2c_master_transmit_receive(device,&address,1,read_ports,2,50));
+
+    bits = (0xFF & read_ports[1]) << 8;   // Get MSBs
+    bits = bits | (0xFF & read_ports[0]); // Get LSBs
+
+    return bits;
+}
 
 // -------------------------------------------------------------------
 // EOF

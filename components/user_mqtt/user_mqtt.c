@@ -141,7 +141,7 @@ static void mqtt_event_handler(void* event_handler_arg,
         printf("Payload: %s\n", payload);
 
         // Check the received topic
-        if(strcmp(RELAY_TOPIC_VALUE,topic) == 0)
+        if(strcmp(TOPIC_RELAY_SET,topic) == 0)
         {
             x_relay_mqtt.type = TCA_WRITE;
             x_relay_mqtt.data = (int32_t)strtol(payload,NULL,16);

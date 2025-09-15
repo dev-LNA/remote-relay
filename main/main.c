@@ -41,13 +41,16 @@
 // Global variables
 static const char* TAG = "MAIN";
 TaskHandle_t relayTaskHandle = NULL;
+TaskHandle_t mqttPubTaskHandle = NULL;
 QueueHandle_t v_relay_get_queue;
 QueueHandle_t v_relay_set_queue;
+QueueHandle_t v_relay_mqtt_pub; 
 
 // relay_status_t relay_flags = RELAY_FLAGS_DEFAULT;
 // ------------------------------------------------
 // Local functions
 void vRelayHandler(void* pvParameters);
+void vMQTTPublish(void* pvParameters);
 
 // ------------------------------------------------
 // Main function
@@ -64,8 +67,9 @@ void app_main(void)
 
     // ------------------------------------------------ 
     // Create a queue for transfer data between tasks with TCA9555
-    v_relay_get_queue  = xQueueCreate(5,sizeof(tca_data_exchange_t));
-    v_relay_set_queue  = xQueueCreate(5,sizeof(tca_data_exchange_t));
+    v_relay_get_queue  = xQueueCreate(5,sizeof(tca_data_exchange_t)); // Get valus from TCA
+    v_relay_set_queue  = xQueueCreate(5,sizeof(tca_data_exchange_t)); // Set levels on TCA
+    v_relay_mqtt_pub   = xQueueCreate(5,sizeof(uint16_t)); // Publish TCA state on TCA
 
     // ------------------------------------------------
     // I2C initialization 
@@ -85,6 +89,8 @@ void app_main(void)
         // Create a task to handle relay data exchange with I2C
         xTaskCreate(vRelayHandler,"Relay",configMINIMAL_STACK_SIZE+1024,
                     (void*)i2c0TCA9555,5,&relayTaskHandle);
+        xTaskCreate(vMQTTPublish,"MQTTPub",configMINIMAL_STACK_SIZE+1024,
+                    NULL,2,&mqttPubTaskHandle);
     }
     else 
         ESP_LOGW(TAG,"Failure to initialize I2C bus device !!!!");
@@ -100,14 +106,13 @@ void app_main(void)
     if(user_mqtt_start() == ESP_OK)
     {
         // Write on relay/topic status and change relay to "online"
-        user_mqtt_publish(RELAY_TOPIC_STATUS,"Online",1,true);
+        user_mqtt_publish(TOPIC_RELAY_STATUS,"Online",1,true);
 
         // Subscribe on topi "relay/value" to control digital outputs values
-        user_mqtt_subscribe(RELAY_TOPIC_VALUE,1);   
+        user_mqtt_subscribe(TOPIC_RELAY_SET,1);   
     }
     else 
         ESP_LOGE(TAG,"Failure to start MQTT !!!!");
-
     
     // -------------------------------------------
     // Start web server
@@ -137,9 +142,9 @@ void vRelayHandler(void* pvParameters)
         if(rawData.type == TCA_WRITE) 
         {
             relayData = (uint16_t)(0x0000FFFF&(rawData.data));
-            tca_set_outputs(tca,relayData);      //  Set gpio outputs
-            tca_clear_outputs(tca,~relayData);   // Clear complementar gpio outputs
-            actualData = tca_get_outputs(tca);   // Read the actual status from I2C 
+            tca_set(tca,relayData);
+            actualData = tca_get(tca);// Read the actual status from I2C 
+            xQueueSend(v_relay_mqtt_pub,&actualData,pdMS_TO_TICKS(100)); // update data send
         }
         else if(rawData.type == TCA_READ)
         {
@@ -147,6 +152,21 @@ void vRelayHandler(void* pvParameters)
             xQueueSend(v_relay_get_queue,&rawData,100);
         }
         printf("Relay values: 0x%x\n",actualData);
+    }
+}
+
+// ------------------------------------------------
+// Task for MQTT topic publish
+void vMQTTPublish(void* pvParameters)
+{
+    uint16_t rawPayload;
+    char buff[16];
+    while(true)
+    {
+        xQueueReceive(v_relay_mqtt_pub,&rawPayload,portMAX_DELAY);
+        
+        sprintf(buff,"%x",rawPayload); // convert payload to string 
+        user_mqtt_publish(TOPIC_RELAY_GET,buff,1,false); // publish on topic
     }
 }
 

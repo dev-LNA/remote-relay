@@ -28,7 +28,12 @@
         "span": "c",
         "user_http_server.h": "c",
         "freertos.h": "c",
-        "format": "c"
+        "format": "c",
+        "bitset": "c",
+        "initializer_list": "c",
+        "regex": "c",
+        "relay_defs.h": "c",
+        "mqtt_client.h": "c"
     },
     "idf.portWin": "COM7",
     "idf.flashType": "UART"
