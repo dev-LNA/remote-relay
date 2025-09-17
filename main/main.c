@@ -121,7 +121,7 @@ void app_main(void)
                     NULL,2,&mqttPubTaskHandle);
 
             // Write on relay/topic status and change relay to "online"
-            user_mqtt_publish(TOPIC_RELAY_STATUS,"Online",1,true);
+            user_mqtt_publish(TOPIC_RELAY_STATUS,"online",1,true);
             // Subscribe on topi "relay/value" to control digital outputs values
             user_mqtt_subscribe(TOPIC_RELAY_SET,1);   
         }

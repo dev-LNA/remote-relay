@@ -186,8 +186,8 @@ esp_err_t user_mqtt_start(void)
         .broker.address.port = ESP_BROKER_PORT, // Broker Port
         .session.last_will =  // Setup last will when node is disconnected
         {
-            .topic = RELAY_TOPIC_STATUS,
-            .msg = "Offline",
+            .topic = TOPIC_RELAY_STATUS,
+            .msg = "offline",
             .msg_len = strlen("Offline"),
             .qos = 1
         }

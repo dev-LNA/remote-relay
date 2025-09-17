@@ -7,13 +7,9 @@
 #define ESP_BROKER_URL "mqtt://192.168.2.101"
 #define ESP_BROKER_PORT 1883
 
-
-#define TOPIC_RELAY_GET     "relay/get"
-#define TOPIC_RELAY_SET     "relay/set"
-#define TOPIC_RELAY_STATUS  "relay/status"
-#define RELAY_TOPIC_STATUS  "relay/status"
-#define RELAY_TOPIC_VALUE   "relay/value"
-
+#define TOPIC_RELAY_GET     "relay/output/get"    // Nodes subscribe on this to get the relay output values 
+#define TOPIC_RELAY_SET     "relay/output/set"    // Nodes publish on this to change the relay outputs
+#define TOPIC_RELAY_STATUS  "relay/status"        // Nodes subscribe on this to know if it is "onlyne" or "offline"
 
 esp_err_t user_mqtt_start(void);
 void user_mqtt_subscribe(char* topic, int qos);
